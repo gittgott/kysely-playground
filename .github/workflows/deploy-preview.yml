@@ -6,6 +6,10 @@ on:
   workflow_dispatch:
 jobs:
   build-and-deploy:
+    environment: preview
+    permissions:
+      id-token: write
+      pages: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,3 +23,11 @@ jobs:
         env:
           VITE_BRANCH: ${{ github.ref_name }}
           VITE_PREVIEW: 1
+      - name: Upload Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # upload entire directory
+          path: "./dist"
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
