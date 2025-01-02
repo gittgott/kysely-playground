@@ -3,7 +3,6 @@ import { EditorController } from "./controllers/editor-controller";
 import { ElementController } from "./controllers/element-controller";
 import { CssUtils } from "./lib/utility/css-utils";
 import { StateManager } from "./lib/state/state-manager";
-import { FirestoreStateRepository } from "./lib/state/firestore-state-repository";
 import { SelectController } from "./controllers/select-controller";
 import { KyselyManager } from "./lib/kysely/kysely-manager";
 import { State } from "./lib/state/state";
@@ -24,7 +23,6 @@ import { DEBUG, SETTING_KEYS } from "./lib/constants";
 import { SettingsUtils } from "./lib/utility/settings-utils";
 import { PanelContainerController } from "./controllers/panel-container-controller";
 import { DomUtils } from "./lib/utility/dom-utils";
-import { GtagUtils } from "./lib/utility/gtag-utils";
 import { AsyncUtils } from "./lib/utility/async-utils.js";
 
 const lazy = null as unknown;
@@ -73,7 +71,7 @@ async function init() {
 
   D.resultController = new ResultController(e`result`);
   setupResultController();
-  D.stateManager = new StateManager(new FirestoreStateRepository());
+  D.stateManager = new StateManager();
   D.versionController = new SelectController(e`version`);
   D.dialectController = new SelectController(e`dialect`);
   D.switchThemeController = new ElementController(e`switch-theme`);
@@ -122,7 +120,6 @@ async function setup() {
   setupMobileModeController();
   setLoading(false);
   setupOpenInNewTabController();
-  setupGtag();
 }
 
 function setLoading(v: boolean) {
@@ -193,8 +190,7 @@ async function setupMoreController() {
 
   const actionKey = DomUtils.isMac() ? "Cmd" : "Ctrl";
   D.morePopupController.appendHint("To share a playground, press 'Save'");
-  D.morePopupController.appendButton("Save", `${actionKey}-S`, save.bind(null, false));
-  D.morePopupController.appendButton("Save and shorten link", `${actionKey}-Shift-S`, save.bind(null, true));
+  D.morePopupController.appendButton("Save", `${actionKey}-S`, save.bind(null));
   D.morePopupController.appendButton("Toggle type-editor", `F2`, toggleTypeEditor);
   D.morePopupController.appendText(" ");
 
@@ -259,7 +255,6 @@ function setupResultController() {
     if (e.message && e.message.trim().startsWith("ResizeObserver")) {
       return;
     }
-    GtagUtils.event("exception", { description: e, fatal: true });
     D.resultController.appendMessage(
       "error",
       `ERROR: There is an unexpected error. Checkout the developer console.`,
@@ -270,7 +265,6 @@ function setupResultController() {
   D.resultController.clear();
   D.resultController.appendMessage("info", "Loading...");
   D.resultController.onClickCode = (v) => {
-    GtagUtils.event("click_result_code");
     copyText(v, "Code copied");
   };
 }
@@ -313,7 +307,6 @@ function setupSwitchThemeController() {
 
 function toggleTypeEditor() {
   const hidden = D.panel0.isHidden();
-  GtagUtils.event("toggle_type_editor", { on: !hidden });
   D.panel0.setHidden(!hidden);
   if (hidden) {
     D.panelContainerController.resetSizes();
@@ -424,19 +417,17 @@ function setupHotKeys() {
   if (DomUtils.hasSearchParam("nohotkey")) {
     return;
   }
-  HotkeyUtils.register(["ctrl"], "s", save.bind(null, false));
-  HotkeyUtils.register(["ctrl", "shift"], "s", save.bind(null, true));
+  HotkeyUtils.register(["ctrl"], "s", save.bind(null));
   HotkeyUtils.register([], "f1", D.morePopupController.toggle.bind(D.morePopupController));
   HotkeyUtils.register([], "f2", toggleTypeEditor);
 }
 
-async function save(shorten: boolean) {
-  GtagUtils.event("save", { shorten });
+async function save() {
   await useLoading(async () => {
     if (SettingsUtils.get("save:format-before-save")) {
       await formatEditors();
     }
-    await D.stateManager.save(makeState(), shorten);
+    await D.stateManager.save(makeState());
     if (SettingsUtils.get("save:copy-url-after-save")) {
       await ClipboardUtils.writeText(window.location.toString());
       ToastUtils.show("info", "URL copied");
@@ -445,7 +436,6 @@ async function save(shorten: boolean) {
 }
 
 async function formatEditors() {
-  GtagUtils.event("format");
   await useLoading(async () => {
     try {
       const printWidth = SettingsUtils.get("ts-format:wider-width") ? 100 : 70;
@@ -488,7 +478,6 @@ function makeState(): State {
 }
 
 async function reloadState(s: State) {
-  await D.stateManager.save(s, false);
   window.location.reload();
 }
 
@@ -515,12 +504,4 @@ async function copyText(v: string, msg: string) {
   } catch (e: any) {
     ToastUtils.show("error", e.message ?? e.toString());
   }
-}
-
-function setupGtag() {
-  const params = { dialect: D.state.dialect, version: D.state.kysely?.name } as any;
-  if (DEBUG) {
-    params.debug_mode = true;
-  }
-  GtagUtils.init(params);
 }

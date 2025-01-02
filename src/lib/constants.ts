@@ -17,9 +17,6 @@ export const GITHUB_MINIFIED_KYSELY_MAIN_BRANCH = "main";
 
 export const GITHUB_API_MINIFIED_KYSELY_MAIN_REFS = `https://api.github.com/repos/${GITHUB_MINIFIED_KYSELY_OWNER}/${GITHUB_MINIFIED_KYSELY_REPO}/git/refs/heads/${GITHUB_MINIFIED_KYSELY_MAIN_BRANCH}`;
 
-export const FIRESTORE_PROJECT_ID = "kysely-playground";
-export const FIRESTORE_COLLECTION_FRAGMENTS = "states";
-
 export const CSS_MIN_WIDE_WIDTH = 650;
 export const CSS_MIN_DESKTOP_WIDTH = 500;
 
