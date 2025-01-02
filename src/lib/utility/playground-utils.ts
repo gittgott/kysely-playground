@@ -2,7 +2,7 @@ import { DIALECT_CONSTRUCTORS, QUERY_EDITOR_HEADER_DELIMITER } from "../constant
 
 export class PlaygroundUtils {
   static getEntrypointUrl() {
-    return window.origin + `/playground.js`;
+    return window.origin + import.meta.env.BASE_URL + `/playground.js`;
   }
 
   static makeQueryEditorHeader(dialect: string) {

@@ -15,7 +15,11 @@ export class StateManager {
     logger.debug("encode state");
     const encoded = await lzEncode(JSON.stringify(state));
     const header: FragmentHeader = "c";
-    window.history.replaceState(null, "", window.location.origin + window.location.search);
+    window.history.replaceState(
+      null,
+      "",
+      window.location.origin + import.meta.env.BASE_URL + window.location.search,
+    );
     window.location.hash = header + encoded;
   }
 
@@ -25,7 +29,7 @@ export class StateManager {
   async load(): Promise<State> {
     checkLegacyParams();
     const fragment = StringUtils.trimPrefix(window.location.hash, "#");
-    const path = StringUtils.trimPrefix(window.location.pathname, "/");
+    const path = StringUtils.trimPrefix(window.location.pathname, import.meta.env.BASE_URL);
     if (fragment === "" && path === "") {
       return DEFUALT_STATE;
     }
